@@ -69,7 +69,7 @@ When viewing a file:
 ### Top toolbar (always visible)
 
 - Project title chip (top-left) — click to navigate / rename.
-- **Share** (top-right) — opens the access + export menu (see [04-exports-and-sharing.md](./04-exports-and-sharing.md)).
+- **Share** (top-right) — opens the access + export menu (see [exports-and-sharing.md](exports-and-sharing.md)).
 - **Profile and connectors** — account menu.
 - **Help** (in chat panel) — small help icon.
 - **Present** — fullscreen presentation mode (visible top-right when a file is open).
@@ -104,4 +104,4 @@ This makes the run feel transparent — you can usually tell what Claude is on w
 | Make a presentation                           | **Slide deck**                        | Toggle **Use speaker notes** if your slides will be presented live; leave off if the deck is for self-serve reading.                  |
 | Reuse a known structure                        | **From template**                     | Templates come from your org. Animation is the only built-in template today.                                                         |
 | One-off / experimental canvas                 | **Other**                             | No fidelity scaffold; minimal opinions.                                                                                              |
-| Set up the design system other projects use   | **Set up design system** card          | One-time job per org; see [05-design-systems-and-pricing.md](./05-design-systems-and-pricing.md).                                    |
+| Set up the design system other projects use   | **Set up design system** card          | One-time job per org; see [design-systems-and-pricing.md](design-systems-and-pricing.md).                                    |

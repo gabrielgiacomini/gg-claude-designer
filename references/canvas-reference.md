@@ -102,7 +102,7 @@ The share panel also has a "Leave feedback for your teammates" textbox with a **
 
 ## Project picker (`/design` homepage)
 
-Refer to [02-ui-and-workflows.md](./02-ui-and-workflows.md) for full coverage. Quick map:
+Refer to [ui-and-workflows.md](ui-and-workflows.md) for full coverage. Quick map:
 
 - **Left column:** Tabs (Prototype / Slide deck / From template / Other), inputs per type, "Set up design system" CTA, footer chips (Docs, Org, User).
 - **Right column:** Tabs (Designs / Examples / Design systems), sub-tabs and search, project cards / examples gallery / design-system management.

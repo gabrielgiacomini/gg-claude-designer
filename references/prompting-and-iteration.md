@@ -64,12 +64,12 @@ A brand is recognized by the things that make it look like itself. Ranked by ide
 
 **Translated into rules:**
 - Only grabbing colors and fonts, skipping logo / product shots / UI → violation.
-- Asking Claude Design to SVG-draw a logo or product shot → violation (see [08-design-principles.md](./08-design-principles.md)).
+- Asking Claude Design to SVG-draw a logo or product shot → violation (see [design-principles.md](design-principles.md)).
 - Missing assets and not telling the user about it → violation. Better to stop and ask than fill in with generic material.
 
 ### Prerequisite: have you done Priority 0 fact verification?
 
-Before this protocol, confirm via [07-fact-verification.md](./07-fact-verification.md) that the brand/product exists, its release status, current version, key specs. Asset-hunting on a phantom product wastes everyone's time.
+Before this protocol, confirm via [fact-verification.md](fact-verification.md) that the brand/product exists, its release status, current version, key specs. Asset-hunting on a phantom product wastes everyone's time.
 
 ### Step 1 — Ask the user for the full asset checklist (one round)
 
@@ -225,14 +225,14 @@ Claude will save your current state and confirm where it lives, so you can refer
 
 ## Effective feedback (vs. ineffective feedback)
 
-- ❌ "This doesn't look right."
-- ✅ "Tighten the spacing between form fields to 8px."
+- **Bad:** "This doesn't look right."
+- **Good:** "Tighten the spacing between form fields to 8px."
 
-- ❌ "Make it pop."
-- ✅ "Use a single warm accent for the CTA — try amber/ochre — and increase the headline weight to bold."
+- **Bad:** "Make it pop."
+- **Good:** "Use a single warm accent for the CTA — try amber/ochre — and increase the headline weight to bold."
 
-- ❌ "Make it more accessible."
-- ✅ "Audit this for WCAG AA contrast on the body text, and tell me which combinations fail."
+- **Bad:** "Make it more accessible."
+- **Good:** "Audit this for WCAG AA contrast on the body text, and tell me which combinations fail."
 
 The pattern: name the property, name the value (or the test), name the scope.
 

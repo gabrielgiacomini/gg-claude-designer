@@ -27,12 +27,12 @@ Or vendor the contents directly into your project's skills folder.
 .
 ├── SKILL.md                              ← entry point, with YAML frontmatter
 ├── references/                           ← topic docs the skill loads on demand
-│   ├── 01-overview.md                    ← what Claude Design is, who it's for, models
-│   ├── 02-ui-and-workflows.md            ← picker, project view, every project type
-│   ├── 03-prompting-and-iteration.md     ← Chat vs. Comments vs. Tweaks vs. Edit
-│   ├── 04-exports-and-sharing.md         ← Share menu, three export categories
-│   ├── 05-design-systems-and-pricing.md  ← design system setup, plan allowances
-│   ├── 06-known-issues.md                ← research-preview bugs and workarounds
+│   ├── overview.md                    ← what Claude Design is, who it's for, models
+│   ├── ui-and-workflows.md            ← picker, project view, every project type
+│   ├── prompting-and-iteration.md     ← Chat vs. Comments vs. Tweaks vs. Edit
+│   ├── exports-and-sharing.md         ← Share menu, three export categories
+│   ├── design-systems-and-pricing.md  ← design system setup, plan allowances
+│   ├── known-issues.md                ← research-preview bugs and workarounds
 │   ├── canvas-reference.md               ← every UI control catalogued
 │   ├── export-decision-guide.md          ← pick the right export format
 │   └── prompt-templates.md               ← reusable prompts by use case
@@ -98,6 +98,6 @@ Substantial portions of the craft layer (fact verification, design principles, b
 
 ## Provenance
 
-Built and validated on 2026-04-26 against Claude Design v(research preview), models Claude Opus 4.7 (default) / Sonnet 4.6 / Haiku 4.5 / and earlier. Cross-checked against the official help-center articles linked in [references/01-overview.md](./references/01-overview.md).
+Built and validated on 2026-04-26 against Claude Design v(research preview), models Claude Opus 4.7 (default) / Sonnet 4.6 / Haiku 4.5 / and earlier. Cross-checked against the official help-center articles linked in [references/overview.md](./references/overview.md).
 
 Issues, fixes, and prompt-pattern contributions welcome.

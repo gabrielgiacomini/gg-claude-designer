@@ -8,7 +8,7 @@
  *   npx tsx triage-error.ts list   # list all known issues
  *
  * Workarounds come from the official help-center articles + observed behavior,
- * captured in references/06-known-issues.md.
+ * captured in references/known-issues.md.
  */
 
 interface KnownIssue {
