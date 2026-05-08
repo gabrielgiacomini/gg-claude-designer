@@ -23,8 +23,19 @@
  * Pass --help for inline help.
  */
 
+/**
+ * Parsed CLI flags: each `--name` maps to a following string value or boolean `true` when absent.
+ */
 type Args = Record<string, string | boolean>;
 
+/**
+ * Walks `argv` and collects `--key` / `--key value` pairs into a flat map.
+ *
+ * @remarks
+ * When a flag is immediately followed by another `--` token or end-of-input, the flag is stored as
+ * `true` (boolean switch). Otherwise the next token is consumed as the string value and the index
+ * skips ahead.
+ */
 function parseArgs(argv: string[]): Args {
   const out: Args = {};
   for (let i = 0; i < argv.length; i++) {
@@ -42,6 +53,12 @@ function parseArgs(argv: string[]): Args {
   return out;
 }
 
+/**
+ * Writes full usage text to stdout and ends the process with exit code 0.
+ *
+ * @remarks
+ * This function never returns: it always calls `process.exit(0)` after printing help.
+ */
 function help(): never {
   process.stdout.write(
     `build-prompt.ts — assemble a Claude Design prompt.\n\n` +
@@ -64,6 +81,13 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * Loads CLI flags, enforces required options, composes the Claude Design prompt, and prints output.
+ *
+ * @remarks
+ * Emits a plain-text sentence when `--json` is omitted; otherwise prints a JSON object with `prompt`
+ * and structured `parts`. Missing required flags write to stderr and exit with code 1.
+ */
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();
@@ -72,7 +96,7 @@ function main() {
   const missing = required.filter((k) => !args[k] || typeof args[k] === "boolean");
   if (missing.length) {
     process.stderr.write(
-      `error: missing required: ${missing.map((m) => `--${m}`).join(", ")}\n` +
+      `error: missing required: ${missing.map((m) => "--" + m).join(", ")}\n` +
         `run with --help for usage.\n`,
     );
     process.exit(1);

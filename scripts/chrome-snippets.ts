@@ -22,6 +22,12 @@
  * (per the `javascript_tool` contract — no `return` statement at the top level).
  */
 
+/**
+ * One injectable Claude Design page probe: stable id, human intent, and top-level JS source.
+ *
+ * @remarks
+ * `code` must evaluate to JSON-serializable data as its final expression (Chrome MCP contract).
+ */
 interface Snippet {
   name: string;
   description: string;
@@ -86,6 +92,12 @@ const SNIPPETS: Snippet[] = [
   },
 ];
 
+/**
+ * Parse CLI argv into command, optional snippet name, and flags.
+ *
+ * @remarks
+ * Positional order: first token is `cmd` (or snippet name shortcut), second is `name` when `cmd` is `get`.
+ */
 function parseArgs(argv: string[]): { cmd?: string; name?: string; json: boolean; help: boolean } {
   const out: { cmd?: string; name?: string; json: boolean; help: boolean } = { json: false, help: false };
   const positional: string[] = [];
@@ -99,6 +111,12 @@ function parseArgs(argv: string[]): { cmd?: string; name?: string; json: boolean
   return out;
 }
 
+/**
+ * Print usage to stdout and terminate the process successfully.
+ *
+ * @remarks
+ * I/O: writes help text then `process.exit(0)`; does not return.
+ */
 function help(): never {
   process.stdout.write(
     `chrome-snippets.ts — JS snippets to inject via Chrome MCP javascript_tool.\n\n` +
@@ -111,6 +129,12 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * CLI entry: list snippets, emit one snippet's JS or JSON metadata, or show help.
+ *
+ * @remarks
+ * Exits non-zero on missing/unknown snippet name; stdout carries payload, stderr carries errors.
+ */
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();

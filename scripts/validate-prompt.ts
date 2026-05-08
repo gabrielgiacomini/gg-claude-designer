@@ -11,6 +11,13 @@
  * suggestions for what to add.
  */
 
+/**
+ * Named slice of the four-part prompt scoring formula tracked by this script.
+ *
+ * @remarks
+ * Each key maps to regex heuristics in {@link PART_HINTS} and human-facing guidance in
+ * {@link SUGGESTIONS}.
+ */
 type Part = "goal" | "layout" | "content" | "audience";
 
 const PART_HINTS: Record<Part, RegExp[]> = {
@@ -21,18 +28,24 @@ const PART_HINTS: Record<Part, RegExp[]> = {
   ],
   // Layout: arrangement words
   layout: [
-    /\b(layout|arrange|column|row|grid|sidebar|header|footer|hero|sections?|stacked|side[- ]by[- ]side|on top|below|left|right|center|two[- ]column|three[- ]column|N screens?|wrapping)\b/i,
+    /\b(layout|arrange|column|row|grid|sidebar|header|footer|hero|sections?|stacked)\b/i,
+    /\b(side[- ]by[- ]side|on top|below|left|right|center|two[- ]column|three[- ]column|N screens?|wrapping)\b/i,
     /\b\d+\s*(columns?|rows?|cards?|cells?|screens?|sections?)\b/i,
   ],
   // Content: data / fields / what's shown
   content: [
-    /\b(show|display|with|including|fields?|metrics?|copy|text|values?|data|content|filters?|tabs?|buttons?|charts?|tables?|inputs?|prompts?|placeholders?|sample)\b/i,
+    /\b(show|display|with|including|fields?|metrics?)\b/i,
+    /\b(copy|text|values?|data|content)\b/i,
+    /\b(filters?|tabs?|buttons?|charts?|tables?)\b/i,
+    /\b(inputs?|prompts?|placeholders?|sample)\b/i,
     /["'].+["']/, // quoted sample copy
     /:\s*\w+/, // colon-prefixed list items
   ],
   // Audience: who / for whom / where
   audience: [
-    /\b(for|audience|users?|team|customers?|stakeholders?|exec(?:utive)?s?|engineers?|designers?|PMs?|admins?|moderators?|operators?|reviewers?|recruiters?)\b/i,
+    /\b(for|audience|users?|team|customers?|stakeholders?|exec(?:utive)?s?)\b/i,
+    /\b(engineers?|designers?|PMs?|admins?)\b/i,
+    /\b(moderators?|operators?|reviewers?|recruiters?)\b/i,
     /\b(internal|external|enterprise|consumer|b2b|b2c|public|private|onboarding|self[- ]serve|live presentation|sign[- ]off)\b/i,
   ],
 };
@@ -44,12 +57,31 @@ const SUGGESTIONS: Record<Part, string> = {
   audience: 'Add who it\'s for or where it\'ll live. Example: "For our exec team\'s weekly review" or "for first-time customers on mobile."',
 };
 
-const QUALITY_BOOSTERS = [
-  { name: "dimensions", regex: /\b(\d+\s*x\s*\d+|\d+\s*px|\d+\s*pt|mobile|tablet|desktop|responsive)\b/i, hint: "Add dimensions or device target (e.g. 360px wide, 1440x900, mobile-first) for sharper output." },
-  { name: "palette", regex: /\b(monochrome|palette|colou?rs?|brand|warm|cool|dark|light|neutral|pastel|vibrant)\b/i, hint: "Add a palette / aesthetic (monochrome, warm accent, brand colors) so the look isn't generic." },
-  { name: "variation count", regex: /\b(single|one|alternative|variations?|options?|versions?|2-?3|3-?5)\b/i, hint: 'Say whether you want one design or alternatives ("show 3 alternatives" or "just one").' },
+const QUALITY_BOOSTERS: { name: string; regexes: RegExp[]; hint: string }[] = [
+  {
+    name: "dimensions",
+    regexes: [/\b(\d+\s*x\s*\d+|\d+\s*px|\d+\s*pt)\b/i, /\b(mobile|tablet|desktop|responsive)\b/i],
+    hint: "Add dimensions or device target (e.g. 360px wide, 1440x900, mobile-first) for sharper output.",
+  },
+  {
+    name: "palette",
+    regexes: [/\b(monochrome|palette|colou?rs?|brand|warm|cool|dark|light|neutral|pastel|vibrant)\b/i],
+    hint: "Add a palette / aesthetic (monochrome, warm accent, brand colors) so the look isn't generic.",
+  },
+  {
+    name: "variation count",
+    regexes: [/\b(single|one|alternative|variations?|options?|versions?)\b/i, /\b(2-?3|3-?5)\b/i],
+    hint: 'Say whether you want one design or alternatives ("show 3 alternatives" or "just one").',
+  },
 ];
 
+/**
+ * Separates known CLI flags from positional prompt fragments.
+ *
+ * @remarks
+ * Tokens starting with `--` that are not `--json`, `--stdin`, or `--help`/`-h` are ignored rather
+ * than treated as errors.
+ */
 function parseArgs(argv: string[]): { json: boolean; stdin: boolean; help: boolean; positional: string[] } {
   const out = { json: false, stdin: false, help: false, positional: [] as string[] };
   for (const a of argv) {
@@ -61,6 +93,13 @@ function parseArgs(argv: string[]): { json: boolean; stdin: boolean; help: boole
   return out;
 }
 
+/**
+ * Accumulates stdin as UTF-8 until the stream ends.
+ *
+ * @remarks
+ * I/O: sets `utf8` encoding on `process.stdin`. Resolves with an empty string when EOF arrives with
+ * no chunks.
+ */
 async function readStdin(): Promise<string> {
   return new Promise((resolve) => {
     let data = "";
@@ -70,6 +109,12 @@ async function readStdin(): Promise<string> {
   });
 }
 
+/**
+ * Prints usage instructions and exits the process successfully.
+ *
+ * @remarks
+ * Never returns; terminates via `process.exit(0)` after writing to stdout.
+ */
 function help(): never {
   process.stdout.write(
     `validate-prompt.ts — score a prompt against the four-part formula.\n\n` +
@@ -81,6 +126,14 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * Runs scoring heuristics on the resolved prompt text and emits human or JSON output.
+ *
+ * @remarks
+ * Resolves prompt text from argv unless `--stdin` is set or argv is empty, then falls back to stdin
+ * when allowed. Exits with code 1 when a TTY session supplies neither argv text nor `--stdin`, or
+ * when stdin trims to empty.
+ */
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();
@@ -106,7 +159,7 @@ async function main() {
     else missing.push(part);
   }
 
-  const boosters = QUALITY_BOOSTERS.filter((b) => !b.regex.test(prompt));
+  const boosters = QUALITY_BOOSTERS.filter((b) => !b.regexes.some((re) => re.test(prompt)));
   const score = present.length / 4;
 
   if (args.json) {
@@ -137,7 +190,7 @@ async function main() {
       for (const b of boosters) process.stdout.write(`  - [${b.name}] ${b.hint}\n`);
     }
   }
-  process.exit(missing.length ? 0 : 0);
+  process.exit(0);
 }
 
 process.stdout.on('error', (e: NodeJS.ErrnoException) => { if (e.code === 'EPIPE') process.exit(0); });

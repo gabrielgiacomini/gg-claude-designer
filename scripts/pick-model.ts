@@ -15,14 +15,36 @@
  */
 
 const MODELS = ["Opus 4.7", "Opus 4.6", "Sonnet 4.6", "Sonnet 4.5", "Haiku 4.5", "Opus 3"] as const;
+
+/**
+ * Claude Design model label drawn from the fixed catalog in `MODELS`.
+ *
+ * @remarks
+ * Keeps recommendation output aligned with the literal union enforced at compile time.
+ */
 type Model = (typeof MODELS)[number];
 
+/**
+ * Structured recommendation emitted as JSON or human-readable CLI lines.
+ *
+ * @remarks
+ * `alternatives` are secondary picks when credits, scope, or review depth differ from the primary path.
+ */
 interface Recommendation {
   primary: Model;
   rationale: string;
   alternatives: { model: Model; reason: string }[];
 }
 
+/**
+ * Scans argv for known flags without enforcing allowed phase/complexity/cost values.
+ *
+ * @remarks
+ * PURITY: Consumes the provided argv array only; callers validate domains before recommending a model.
+ *
+ * @param argv - Tokens after the runtime executable (for example `process.argv.slice(2)`).
+ * @returns Flag captures plus `--json` / `--help` booleans.
+ */
 function parseArgs(argv: string[]): { phase?: string; complexity?: string; cost?: string; json: boolean; help: boolean } {
   const out: { phase?: string; complexity?: string; cost?: string; json: boolean; help: boolean } = { json: false, help: false };
   for (let i = 0; i < argv.length; i++) {
@@ -35,6 +57,12 @@ function parseArgs(argv: string[]): { phase?: string; complexity?: string; cost?
   return out;
 }
 
+/**
+ * Writes usage guidance to stdout and ends the process with status zero.
+ *
+ * @remarks
+ * I/O: Prints help text then calls `process.exit(0)`; this path never returns to callers.
+ */
 function help(): never {
   process.stdout.write(
     `pick-model.ts — recommend a Claude Design model.\n\n` +
@@ -51,6 +79,17 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * Maps workflow phase and constraint knobs to a primary model plus rationale and alternates.
+ *
+ * @remarks
+ * PURITY: No I/O. Unknown `phase` strings receive the same default path as an unspecified phase (strongest default model).
+ *
+ * @param phase - Workflow mode such as initial generation, iteration, or review.
+ * @param complexity - Simple versus multi-surface work, already normalized by the caller.
+ * @param cost - Credit sensitivity (`low` biases cheaper models where rules allow).
+ * @returns Primary pick, explanation string, and ordered fallback ideas.
+ */
 function recommend(phase: string, complexity: string, cost: string): Recommendation {
   // Initial generation: lean toward Opus 4.7 for quality.
   if (phase === "initial") {
@@ -115,6 +154,12 @@ function recommend(phase: string, complexity: string, cost: string): Recommendat
   };
 }
 
+/**
+ * Validates CLI inputs, builds the recommendation, and prints JSON or formatted prose.
+ *
+ * @remarks
+ * I/O: Reads `process.argv`, writes recommendations or errors to stdout/stderr, and may exit with a non-zero code when flags are invalid.
+ */
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();

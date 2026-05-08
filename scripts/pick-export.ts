@@ -15,6 +15,12 @@
  *   (or "Use Access controls instead — no export needed")
  */
 
+/**
+ * Structured Share-menu export recommendation produced when a scoring rule wins.
+ *
+ * @remarks
+ * `primary` is the headline Claude Design export action; `alternatives` and `warnings` qualify the pick.
+ */
 interface Recommendation {
   primary: string;
   rationale: string;
@@ -30,11 +36,23 @@ interface Recommendation {
  */
 type Matcher = { recipient?: RegExp; intent?: RegExp; either?: RegExp };
 
+/**
+ * One weighted rule: matchers contribute to a score; the factory builds the winning recommendation.
+ *
+ * @remarks
+ * `rec` runs only for the highest-scoring rule so output objects are not built for every candidate.
+ */
 interface Rule {
   matchers: Matcher[];
   rec: () => Recommendation;
 }
 
+/**
+ * Computes how strongly a rule matches the given recipient and intent text.
+ *
+ * @remarks
+ * Intent regex hits add twice the weight of recipient-only hits; `either` matches either side once.
+ */
 function score(rule: Rule, recipient: string, intent: string): number {
   let s = 0;
   for (const m of rule.matchers) {
@@ -167,6 +185,12 @@ const RULES: Rule[] = [
   },
 ];
 
+/**
+ * Parses CLI argv for `--recipient`, `--intent`, `--json`, and help flags.
+ *
+ * @remarks
+ * Unrecognized tokens are ignored; flag values take the immediately following argv element.
+ */
 function parseArgs(argv: string[]): { recipient?: string; intent?: string; json: boolean; help: boolean } {
   const out: { recipient?: string; intent?: string; json: boolean; help: boolean } = { json: false, help: false };
   for (let i = 0; i < argv.length; i++) {
@@ -178,6 +202,12 @@ function parseArgs(argv: string[]): { recipient?: string; intent?: string; json:
   return out;
 }
 
+/**
+ * Prints usage text to stdout and terminates the process with exit code 0.
+ *
+ * @remarks
+ * I/O: synchronous write to stdout; never returns because it calls `process.exit`.
+ */
 function help(): never {
   process.stdout.write(
     `pick-export.ts — recommend the right export from the Share menu.\n\n` +
@@ -191,6 +221,12 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * Runs the export recommendation CLI: score rules, emit JSON or human-readable output.
+ *
+ * @remarks
+ * Exits with code 1 when `--recipient` is missing; writes recommendation to stdout or errors to stderr.
+ */
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();

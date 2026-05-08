@@ -11,6 +11,13 @@
  * captured in references/known-issues.md.
  */
 
+/**
+ * One catalog row for symptom triage: stable id, regex signals, and workaround copy.
+ *
+ * @remarks
+ * During lookup, every issue whose matchers hit the query is included; matchers act as OR
+ * signals within an issue and issues accumulate in filter order.
+ */
 interface KnownIssue {
   id: string;
   matchers: RegExp[];
@@ -92,6 +99,12 @@ const ISSUES: KnownIssue[] = [
   },
 ];
 
+/**
+ * Splits argv-style tokens into JSON/help flags and leftover positional symptom text.
+ *
+ * @remarks
+ * Unknown `--long-options` are ignored; only `--json`, `--help`, and `-h` change behavior.
+ */
 function parseArgs(argv: string[]): { json: boolean; help: boolean; positional: string[] } {
   const out = { json: false, help: false, positional: [] as string[] };
   for (const a of argv) {
@@ -102,6 +115,12 @@ function parseArgs(argv: string[]): { json: boolean; help: boolean; positional: 
   return out;
 }
 
+/**
+ * Prints usage text for this script and terminates the process successfully.
+ *
+ * @remarks
+ * Never returns; calls `process.exit(0)` after writing to stdout.
+ */
 function help(): never {
   process.stdout.write(
     `triage-error.ts — match an error symptom to its documented workaround.\n\n` +
@@ -113,6 +132,12 @@ function help(): never {
   process.exit(0);
 }
 
+/**
+ * Prints the full known-issue catalog to stdout, either human-readable or JSON.
+ *
+ * @remarks
+ * JSON output is pretty-printed with two-space indentation and a trailing newline.
+ */
 function listAll(json: boolean) {
   if (json) {
     process.stdout.write(JSON.stringify(ISSUES.map(({ id, symptom, workaround, source }) => ({ id, symptom, workaround, source })), null, 2) + "\n");
@@ -123,6 +148,14 @@ function listAll(json: boolean) {
   }
 }
 
+/**
+ * CLI orchestration: routes help, full listing, and symptom matching with optional JSON output.
+ *
+ * @remarks
+ * Delegates to {@link listAll} when there is no query or the query is `list`. With `--json`, a
+ * query emits `{ query, matches }` (possibly empty `matches`); without `--json`, unmatched
+ * queries print guidance text.
+ */
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) help();
