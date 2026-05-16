@@ -3,7 +3,7 @@ name: gg-claude-designer
 description: Use when the user wants to create a shareable UI mockup, prototype, landing page, dashboard, slide deck, or microsite in Claude Design, or mentions "Claude Design", design-system inheritance, brand-on prototypes, exports, or troubleshooting.
 ---
 
-# Claude Design
+# GG → Claude Designer → Claude Design
 
 > **Snapshot age:** collected 2026-04-26 (~7 days old as of today).
 > Verify release-sensitive answers with the official help center before responding with high confidence.
