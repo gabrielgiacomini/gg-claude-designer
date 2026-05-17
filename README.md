@@ -4,6 +4,27 @@ A Claude skill for using **Claude Design** (https://claude.ai/design) — Anthro
 
 The skill teaches a fresh agent how to operate Claude Design end-to-end: pick the right project type, compose a well-formed prompt, drive the canvas via Chrome MCP, iterate via Chat / Comments / Tweaks / Edit, choose the right export, and triage the research-preview rough edges.
 
+## Install
+
+Drop this skill into a workspace as a Git submodule (recommended for pinned
+versions) or a plain clone — no GG tooling required:
+
+```bash
+# Project-local, version-pinned (recommended):
+git submodule add git@github.com:gabrielgiacomini/gg-claude-designer.git .claude/skills/gg-claude-designer
+
+# OR project-local, latest main:
+git -C .claude/skills clone git@github.com:gabrielgiacomini/gg-claude-designer.git
+
+# OR user-level, available in every project on this machine:
+git -C ~/.claude/skills clone git@github.com:gabrielgiacomini/gg-claude-designer.git
+```
+
+Restart Claude Code (or run `/skills reload`) to activate. See the parent
+[`gg-skills` repo](https://github.com/gabrielgiacomini/gg-skills) for the
+full bootstrap pattern, multi-IDE projection via `gg-ide-sync`, and the
+catalog of every available skill.
+
 ## Why this exists
 
 Claude Design produces excellent design output, but operating it from a Claude agent (e.g. via Cowork mode + the Claude-in-Chrome MCP) has gotchas: a non-obvious submit shortcut (`⌘+Return`, not Return), file-attachment surfaces that aren't drivable from automation, a canvas iframe that captures its own input, and exports that fall into three different categories (instant / Claude-generated / external). The skill encodes those gotchas plus a set of small TypeScript helpers that turn vague requests into concrete script calls.
