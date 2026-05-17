@@ -25,22 +25,114 @@ Restart Claude Code (or run `/skills reload`) to activate. See the parent
 full bootstrap pattern, multi-IDE projection via `gg-ide-sync`, and the
 catalog of every available skill.
 
-## Why this exists
+## When to use
 
-Claude Design produces excellent design output, but operating it from a Claude agent (e.g. via Cowork mode + the Claude-in-Chrome MCP) has gotchas: a non-obvious submit shortcut (`⌘+Return`, not Return), file-attachment surfaces that aren't drivable from automation, a canvas iframe that captures its own input, and exports that fall into three different categories (instant / Claude-generated / external). The skill encodes those gotchas plus a set of small TypeScript helpers that turn vague requests into concrete script calls.
+Trigger this skill when the user:
 
-## Quick install
+- Asks for a UI mockup, prototype, landing page, dashboard, microsite, signup flow, or settings screen that should be **shareable and exportable**.
+- Mentions **"Claude Design"** by name.
+- Wants output to match their brand via **design system inheritance**.
+- Needs a **slide deck** exportable to PPTX or handoff to Canva.
+- Wants **visual iteration** with inline comments, on-canvas tweaks, or direct property edits.
+- Wants to **hand a design off to Claude Code** for implementation.
+- Asks how to **set up an org-wide design system**.
+- Hits a Claude Design issue (vanishing comments, save errors, "chat upstream error").
 
-Drop the skill folder into your Claude skills directory. Concretely:
+Skip when the user wants a single throwaway visual inside a chat (plain Artifacts is better) or asks about general design theory without a specific Claude Design task.
 
-```bash
-# clone next to your other skills (adjust path for your platform)
-git clone https://github.com/gabrielgiacomini/gg-claude-designer.git ~/.claude/skills/claude-designer
+## How it operates
 
-# the agent picks it up via the SKILL.md frontmatter "name" field
+### Inputs
+
+| Input | Where it comes from |
+|---|---|
+| User's design brief | Conversation text; structured with `build-prompt.ts` |
+| Brand assets (logo, screenshots, product shots) | User-supplied files attached in Claude Design before the first prompt |
+| Design system tokens | Org-level design system configured at https://claude.ai/design |
+| Codebase / component library | Attached subdirectory (not the whole monorepo — see Caveats) |
+| Sibling project name | Named in the prompt to inherit visual context cross-project |
+| Chrome MCP connection | `mcp__Claude_in_Chrome__list_connected_browsers` → user selects which browser tab |
+| `SKILL.md` + `references/*.md` | Read on demand by the agent; no env vars required |
+
+No environment variables are required. The scripts use only Node's built-in `process.argv` — no `.env`, no secrets, no network calls.
+
+### Outputs
+
+| Output | Path / format | Notes |
+|---|---|---|
+| Assembled prompt text | stdout (plain text or `--json`) from `build-prompt.ts` | Passed to the Claude Design chat input |
+| Prompt score / gap report | stdout from `validate-prompt.ts` | Lists missing four-part-formula components |
+| Project type recommendation | stdout from `pick-project-type.ts` | One of: Prototype (hi-fi / wireframe), Slide deck, From template, Other |
+| Export format recommendation | stdout from `pick-export.ts` | One of: PDF, PPTX, .zip, standalone HTML, Canva, Claude Code handoff |
+| Model recommendation | stdout from `pick-model.ts` | Opus 4.7 for initial generation; Sonnet/Haiku for iteration |
+| Error triage | stdout from `triage-error.ts` | Matched workaround from `references/known-issues.md` |
+| DOM probe result | JSON from Chrome MCP `javascript_tool` | Page state: file tree, running indicator, share menu items, model list |
+| Design files | Claude Design project (browser) | `.html` pages + `.jsx` components written by Claude Design on the canvas |
+| Exported artifact | User's Downloads folder (user must approve) | `.zip` (~5–50 KB, instant), PDF/HTML (~5–10 min sub-generation), PPTX |
+
+### External commands and MCPs
+
+The agent calls these in order — local scripts first, Chrome MCP for UI actions, no other network calls:
+
+| Command | Purpose |
+|---|---|
+| `npx tsx scripts/build-prompt.ts --goal … --layout … --content … --audience …` | Assemble a well-formed four-part prompt |
+| `npx tsx scripts/validate-prompt.ts "<prompt>"` | Score a user-supplied prompt; surface gaps before submission |
+| `npx tsx scripts/pick-project-type.ts --deliverable "…"` | Recommend picker tab |
+| `npx tsx scripts/pick-export.ts --recipient "…" --intent "…"` | Recommend Share-menu export |
+| `npx tsx scripts/pick-model.ts --phase iterate --complexity simple --cost low` | Recommend model by phase |
+| `npx tsx scripts/triage-error.ts "<symptom>"` | Match symptom → documented workaround before asking the user |
+| `npx tsx scripts/chrome-snippets.ts get <name>` | Retrieve a named JS snippet for injection |
+| `mcp__Claude_in_Chrome__javascript_tool` | Execute the JS snippet in the connected browser tab |
+| `mcp__Claude_in_Chrome__navigate` | Open https://claude.ai/design (or a project URL) |
+| `mcp__Claude_in_Chrome__find` / `form_input` / `shortcuts_execute` | Type into the chat input; submit with `⌘+Return` |
+| `mcp__Claude_in_Chrome__read_page` / `get_page_text` | Read canvas or project state |
+
+All TypeScript scripts are pure-logic — they take CLI input, run a decision tree, and emit JSON or human-readable text. No network, no Chrome MCP calls from within the scripts.
+
+### Side effects
+
+- **Browser navigation:** the agent opens and drives the Claude Design web app in a connected Chrome tab. The user must have a tab open and logged in at claude.ai.
+- **Canvas writes:** Claude Design writes `.html` pages and `.jsx` components into the project on every generation. These live in Claude Design's cloud storage, not on the local filesystem.
+- **Downloads:** the agent must ask the user to approve before triggering any download. The user clicks "Download project as .zip" or approves an export; the file lands in the browser's default download folder.
+- **Sharing/access changes:** the agent must never toggle access controls or sharing permissions autonomously. Confirm with the user first.
+- **Model picker:** the agent may read the model dropdown via `chrome-snippets.ts get list-models` but does not switch models without user awareness.
+
+### Mode toggles
+
+| Flag | Effect |
+|---|---|
+| `--json` (any script) | Machine-parseable JSON instead of human-readable text |
+| `--variations one` | `build-prompt.ts` appends "Just give me a single design — no variations." |
+| `--design-system off` | Omits the design system token line from the assembled prompt |
+| `--mode dark` | Adds dark-mode aesthetic to the prompt |
+| `--device mobile` | Appends mobile-width constraint |
+
+## Operational flow
+
+```mermaid
+flowchart TD
+    A([User request]) --> B{Trigger check\nSKILL.md}
+    B -- skip --> Z([Use plain Artifacts])
+    B -- trigger --> C[Verify facts\nWebSearch any named product/version]
+    C --> D[Gather brand assets\nlogo · screenshots · design tokens]
+    D --> E[Check Chrome MCP\nlist_connected_browsers\nnavigate to claude.ai/design]
+    E --> F[pick-project-type.ts\nPrototype · Deck · Template · Other]
+    F --> G[build-prompt.ts\ngoal · layout · content · audience]
+    G --> H[validate-prompt.ts\nfour-part score · gap report]
+    H -- gaps found --> G
+    H -- valid --> I[Submit to Claude Design\nChrome MCP form_input\nsubmit with Cmd+Return]
+    I --> J[Poll generation\nchrome-snippets.ts get is-generation-running\njavascript_tool loop]
+    J -- still running --> J
+    J -- done --> K[Verify output\ncheck Design Files panel\nopen standalone HTML in browser]
+    K -- errors / blank canvas --> L[triage-error.ts symptom\nworkaround from known-issues.md]
+    L --> M{Iterate?}
+    K -- ok --> M
+    M -- Chat / Tweaks / Edit --> I
+    M -- export --> N[pick-export.ts\nrecipient · intent]
+    N --> O[User approves export\nDownload · PDF · PPTX · Canva · Claude Code]
+    O --> P([Artifact delivered])
 ```
-
-Or vendor the contents directly into your project's skills folder.
 
 ## Layout
 
@@ -68,40 +160,41 @@ Or vendor the contents directly into your project's skills folder.
     └── chrome-snippets.ts                ← JS to inject via Chrome MCP javascript_tool
 ```
 
-## How an agent actually uses this
-
-The skill's trigger map at the top of [SKILL.md](./SKILL.md) maps user situations to script calls. Concretely:
-
-| When this happens…                                                              | Run                                  |
-| ------------------------------------------------------------------------------- | ------------------------------------ |
-| About to compose a prompt                                                       | `build-prompt.ts`                    |
-| About to forward a user-supplied prompt straight through                         | `validate-prompt.ts`                 |
-| Need to pick from the four picker tabs                                           | `pick-project-type.ts`               |
-| User asks for an export and you're not sure which                                | `pick-export.ts --recipient … --intent …` |
-| User wants to save credits, or you're on iteration 3+                            | `pick-model.ts`                      |
-| **Anything errored in the UI**                                                   | `triage-error.ts "<symptom>"` BEFORE asking the user |
-| Need to read state from the page without clicking around                          | `chrome-snippets.ts get <name>` then pass to `javascript_tool` |
-
-## Running the scripts
-
-All scripts are pure-logic TypeScript — they take CLI input and emit JSON or human-readable text. No network, no Chrome MCP calls. The agent calls them, reads the output, then acts on it.
+## Quick start
 
 ```bash
-# preferred: tsx via npx
-npx tsx scripts/<script>.ts <args>
+# clone the skill
+git clone https://github.com/gabrielgiacomini/gg-claude-designer.git ~/.claude/skills/gg-claude-designer
 
-# pass --json for machine-parseable output
-npx tsx scripts/build-prompt.ts --goal "…" --layout "…" --content "…" --audience "…" --json
+# assemble a prompt for a dashboard (pure local, no Chrome needed)
+npx tsx ~/.claude/skills/gg-claude-designer/scripts/build-prompt.ts \
+  --goal "executive dashboard" \
+  --layout "3-col KPI strip on top, chart row below, table at the bottom" \
+  --content "MRR, churn rate, NPS — each as a card with sparkline + delta" \
+  --audience "CEO weekly review" \
+  --dimensions "1440x900" \
+  --palette "minimal monochrome with one warm accent" \
+  --variations one
 
-# pass --help to any script
-npx tsx scripts/build-prompt.ts --help
+# validate a prompt the user already wrote
+npx tsx ~/.claude/skills/gg-claude-designer/scripts/validate-prompt.ts "Make me a dashboard"
+
+# pick the right export once the design is approved
+npx tsx ~/.claude/skills/gg-claude-designer/scripts/pick-export.ts \
+  --recipient "CEO" --intent "sign-off"
 ```
 
-See [scripts/README.md](./scripts/README.md) for full examples.
+See [scripts/README.md](./scripts/README.md) for the full script inventory and examples.
 
-## What's been validated
+## Resources
 
-The skill was built from a hands-on walk through the live tool, then exercised across four real Claude Design projects covering Chat-based iteration, Tweaks-based iteration, sibling-project context inheritance, and `.zip` exports. Findings from that exercise round-tripped back into the skill — see commit history.
+- [Claude Design](https://claude.ai/design) — the tool itself
+- [references/overview.md](./references/overview.md) — models, plans, how it differs from Artifacts
+- [references/ui-and-workflows.md](./references/ui-and-workflows.md) — picker, canvas, every project type
+- [references/prompting-and-iteration.md](./references/prompting-and-iteration.md) — four-part formula, four iteration modes
+- [references/exports-and-sharing.md](./references/exports-and-sharing.md) — every Share menu item
+- [references/known-issues.md](./references/known-issues.md) — research-preview bugs and confirmed workarounds
+- [scripts/README.md](./scripts/README.md) — all TypeScript helpers with examples
 
 ## Caveats
 
@@ -109,7 +202,12 @@ The skill was built from a hands-on walk through the live tool, then exercised a
 - **Cmd+Return submits.** Plain Return inserts a newline. The skill harps on this for a reason.
 - **Three categories of "export."** `Download project as .zip` is an instant download (~5–50 KB). `Export as PDF` and `Export as standalone HTML` are sub-Claude generations that take 5–10 minutes and produce new files in the project. `Send to Canva` and `Handoff to Claude Code` push to external tools.
 - **Cross-project context.** Mention a sibling project by name in the prompt and Claude Design will read its files for visual consistency. Undocumented, but reliable.
+- **Monorepos.** Attach only a component library or design-tokens subdirectory — linking an entire monorepo causes the browser to lag or hang.
 - **Cowork safety rules apply** when an agent operates Claude Design on a user's behalf: downloads need explicit user approval, sharing/access changes are off-limits.
+
+## What's been validated
+
+The skill was built from a hands-on walk through the live tool, then exercised across four real Claude Design projects covering Chat-based iteration, Tweaks-based iteration, sibling-project context inheritance, and `.zip` exports. Findings from that exercise round-tripped back into the skill — see commit history.
 
 ## License and attribution
 
