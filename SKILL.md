@@ -1,6 +1,6 @@
 ---
 name: gg-claude-designer
-description: Use when the user wants to create a shareable UI mockup, prototype, landing page, dashboard, slide deck, or microsite in Claude Design, or mentions "Claude Design", design-system inheritance, brand-on prototypes, exports, or troubleshooting.
+description: when configuring Claude Design mockups, prototypes, landing pages, dashboards, slide decks, microsites. Design-system inheritance, brand-on exports. MCP-compatible. Not for non-Claude Design.
 ---
 
 # GG → Claude Designer → Claude Design
