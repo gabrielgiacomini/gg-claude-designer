@@ -52,6 +52,7 @@ For the full script inventory and examples, see `scripts/README.md`.
 | 3 | Comments are the most reliable way to make small changes | Comments occasionally vanish; chat is more reliable; Tweaks are best for value fiddling | Interaction-mode matching |
 | 4 | Figma export is available | Figma is input-only; closest output is standalone HTML | Export boundaries |
 | 5 | Opus should be used for every iteration | Sonnet/Haiku are fine for iteration; Opus is for initial generation | Model economics |
+| 6 | Design can skip fact verification | Verify with WebSearch before prompting | Fact-first |
 
 ## Non-Negotiable Policy
 
@@ -62,6 +63,60 @@ For the full script inventory and examples, see `scripts/README.md`.
 5. **For any answer about models, pricing, or current version:** treat bundled data as likely stale and verify with WebSearch before stating specifics.
 6. **Verify the artifact before claiming done.** Open the host HTML, check the console for errors, confirm artboards match the chat description, and click through at least one interactive element. See `verification.md`.
 7. **Do not ask Claude Design to SVG-draw logos, product shots, or hero illustrations.** Use real assets or labeled placeholders. See `design-principles.md`.
+
+## Claude Designer Quality Checklist
+
+Use this checklist before and during any Claude Designer operation.
+
+| # | Checklist Item | Why It Matters | Gate |
+|---|---------------|---------------|------|
+| 1 | **Facts verified** — WebSearch ran for products/companies/versions | Correct context | Pre-draft |
+| 2 | **Brand assets gathered** — Logo, colors, fonts, UI screenshots | Asset-first protocol | Pre-draft |
+| 3 | **Design system declared** — Type scale, backgrounds, accent, spacing | Brand consistency | Draft |
+| 4 | **Prompt built** — scripts/build-prompt.ts ran | Structured prompt | Draft |
+| 5 | **Prompt validated** — scripts/validate-prompt.ts passed | Quality gate | Draft |
+| 6 | **Output verified** — Console checked, artboards match, interactions work | Correctness | Closeout |
+| 7 | **Export selected** — scripts/pick-export.ts ran | Right format | Closeout |
+| 8 | **Real assets used** — No SVG logos or product shots | Design quality | Draft |
+
+### Quality Tiers
+
+| Tier | Criteria | Use When |
+|------|----------|----------|
+| **Minimal** | Items 1-3, 6 | Quick mockup |
+| **Standard** | Items 1-5, 6, 7 | Full design |
+| **Full** | All 8 items | Brand-sensitive design |
+
+### Pre-Draft Verification
+
+```
+□ Facts verified with WebSearch
+□ Brand assets gathered
+□ Design system declared
+□ Prompt built with scripts/build-prompt.ts
+□ Prompt validated
+```
+
+## Claude Designer Consistency Validator
+
+Before finalizing, verify:
+
+### Consistency Check Matrix
+
+| Check | What to Verify | How to Fix |
+|-------|---------------|------------|
+| **Facts vs Memory** | WebSearch ran for named entities | Add WebSearch |
+| **Assets vs Generic** | Brand assets gathered | Add assets |
+| **System vs Output** | Design system declared | Add system |
+| **Verification vs Claim** | Artifact verified before done | Run verification |
+
+### Red Flags (Never Present)
+
+- [ ] Facts stated without WebSearch
+- [ ] Generic output with no brand assets
+- [ ] SVG logos or product shots requested
+- [ ] Output claimed done without verification
+- [ ] Export format wrong for recipient
 
 ## Workflow
 
